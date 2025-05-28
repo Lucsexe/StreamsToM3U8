@@ -7,6 +7,7 @@ import pytz
 import requests
 from lxml import etree
 from bs4 import BeautifulSoup
+import subprocess
 
 tz = pytz.timezone('Europe/London')
 channels = []
