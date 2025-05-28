@@ -1,4 +1,5 @@
 #EXTM3U
 
 #EXTINF:-1 tvg-id="lanacion.yt" tvg-name="La Nacion" group-title="Noticias", La Nacion
+Error obteniendo M3U8 para https://www.youtube.com/channel/UCba3hpU7EFBSk817y9qZkiA: name 'subprocess' is not defined
 https://github.com/ExperiencersInternational/tvsetup/raw/main/staticch/no_stream_2.mp4
