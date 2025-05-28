@@ -76,91 +76,34 @@ Build an XMLTV file based on provided stream information
 
 def grab_youtube(url: str):
     """
-Grabs the live-streaming M3U8 file from YouTube
+    Grabs the live-streaming M3U8 file from YouTube using yt-dlp
     :param url: The YouTube URL of the livestream
     """
     if '&' in url:
         url = url.split('&')[0]
 
-    requests.packages.urllib3.disable_warnings()
-    stream_info = requests.get(url, timeout=15)
-    response = stream_info.text
-    soup = BeautifulSoup(stream_info.text, features="html.parser")
+    try:
+        # Usar yt-dlp para obtener el enlace M3U8
+        m3u8_url = subprocess.check_output(["yt-dlp", "-f", "best", "-g", url]).decode().strip()
+        if not m3u8_url or "m3u8" not in m3u8_url:
+            print("https://github.com/ExperiencersInternational/tvsetup/raw/main/staticch/no_stream_2.mp4")
+            return
 
+        # Obtener metadatos para el EPG (opcional, pero lo mantenemos para compatibilidad)
+        requests.packages.urllib3.disable_warnings()
+        stream_info = requests.get(url, timeout=15)
+        soup = BeautifulSoup(stream_info.text, features="html.parser")
+        stream_title = soup.find("meta", property="og:title")["content"]
+        stream_desc = soup.find("meta", property="og:description")["content"]
+        stream_image_url = soup.find("meta", property="og:image")["content"]
+        channels.append((channel_name, channel_id, category, stream_title, stream_desc, stream_image_url))
 
-    if '.m3u8' not in response or stream_info.status_code != 200:
-        print("https://github.com/ExperiencersInternational/tvsetup/raw/main/staticch/no_stream_2.mp4")
-        return
-    end = response.find('.m3u8') + 5
-    tuner = 100
-    while True:
-        if 'https://' in response[end - tuner: end]:
-            link = response[end - tuner: end]
-            start = link.find('https://')
-            end = link.find('.m3u8') + 5
-
-            stream_title = soup.find("meta", property="og:title")["content"]
-            stream_desc = soup.find("meta", property="og:description")["content"]
-            stream_image_url = soup.find("meta", property="og:image")["content"]
-            channels.append((channel_name, channel_id, category, stream_title, stream_desc, stream_image_url))
-
-            break
-        else:
-            tuner += 5
-    print(f"{link[start: end]}")
-
-def grab_dailymotion(url: str):
-    """
-Grabs the live-streaming M3U8 file from Dailymotion at its best resolution
-    :param url: The Dailymotion URL of the livestream
-    :return:
-    """
-    requests.packages.urllib3.disable_warnings()
-    stream_info = requests.get(url, timeout=15)
-    response = stream_info.text
-    soup = BeautifulSoup(stream_info.text, features="html.parser")
-
-    if stream_info.status_code != 200:
+        print(m3u8_url)
+    except Exception as e:
+        print(f"Error obteniendo M3U8 para {url}: {e}")
         print("https://github.com/ExperiencersInternational/tvsetup/raw/main/staticch/no_stream_2.mp4")
         return
 
-    stream_title = soup.find("meta", property="og:title")["content"].split('-')[0].strip()
-    stream_desc = soup.find("meta", property="og:description")["content"]
-    stream_image_url = soup.find("meta", property="og:image")["content"]
-    channels.append((channel_name, channel_id, category, stream_title, stream_desc, stream_image_url))
-
-    stream_api = requests.get(f"https://www.dailymotion.com/player/metadata/video/{url.split('/')[4]}").json()['qualities']['auto'][0]['url']
-    m3u_file = requests.get(stream_api).text.strip().split('\n')[1:]
-    best_url = sorted([[int(m3u_file[i].strip().split(',')[2].split('=')[1]), m3u_file[i + 1]] for i in range(0, len(m3u_file) - 1, 2)], key=lambda x: x[0])[-1][1].split('#')[0]
-    print(best_url)
-
-def grab_twitch(url: str):
-    """
-
-    :param url:
-    :return:
-    """
-    requests.packages.urllib3.disable_warnings()
-    stream_info = requests.get(url, timeout=15)
-    soup = BeautifulSoup(stream_info.text, features="html.parser")
-
-    if stream_info.status_code != 200:
-        print("https://github.com/ExperiencersInternational/tvsetup/raw/main/staticch/no_stream_2.mp4")
-        return
-
-    stream_title = soup.find("meta", property="og:title")["content"].split('-')[0].strip()
-    stream_desc = soup.find("meta", property="og:description")["content"]
-    stream_image_url = soup.find("meta", property="og:image")["content"]
-    channels.append((channel_name, channel_id, category, stream_title, stream_desc, stream_image_url))
-
-    response = requests.get(f"https://pwn.sh/tools/streamapi.py?url={url}").json()["success"]
-    if response == "false":
-        print("https://github.com/ExperiencersInternational/tvsetup/raw/main/staticch/no_stream_2.mp4")
-        return
-    url_list = requests.get(f"https://pwn.sh/tools/streamapi.py?url={url}").json()["urls"]
-    max_res_key = list(url_list)[-1]
-    stream_url = url_list.get(max_res_key)
-    print(stream_url)
 
 channel_name = ''
 channel_id = ''
